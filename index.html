@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080e12">
+  <meta name="description" content="Lect. Sibsan Suksuchano — interactive 3D portfolio: PBR materials, flock simulation, advanced GLSL, and interactive water.">
+  <title>Lect. Sibsan Suksuchano · Interactive 3D Portfolio</title>
+  <style>
+    :root{color-scheme:dark;--bg:#080e12;--ink:#edf2ee;--muted:#a5b5ba;--line:#ffffff22;--accent:#d9f286;--panel:#0a141be6}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,"Segoe UI",Tahoma,sans-serif;font-size:16px;overflow-x:hidden}
+    button,input,select{font:inherit}button,a,input,select{touch-action:manipulation}button{color:inherit;cursor:pointer}a{color:inherit;text-underline-offset:4px}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:5px}
+    button{border:1px solid var(--line);background:#112029;border-radius:8px;padding:10px 14px}button:hover{background:#21343b}button:disabled{opacity:.5;cursor:wait}button[aria-pressed=true]{color:var(--accent);border-color:#d9f26866}
+    #app{position:relative;min-height:800px;height:100svh;isolation:isolate;overflow:hidden}
+    #stage{position:absolute;inset:0;z-index:-2}#stage canvas{display:block;width:100%;height:100%;touch-action:none;outline-offset:-5px}
+    .vignette{position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,#080e12f0 0%,#080e1290 25%,transparent 53%),linear-gradient(0deg,#080e12 0%,transparent 28%,transparent 78%,#080e12a0)}
+    header{display:flex;justify-content:space-between;align-items:center;padding:27px 36px;gap:20px;border-bottom:1px solid var(--line)}
+    .brand{display:flex;gap:13px;align-items:center}.monogram{border:1px solid #d9f28677;color:var(--accent);width:43px;height:43px;border-radius:50%;display:grid;place-items:center;font-weight:700;letter-spacing:-2px;padding-right:2px}.brand-name{font-size:14px;letter-spacing:.14em}.brand small{display:block;font-size:12px;color:var(--muted);letter-spacing:.06em;margin-top:5px}
+    .header-right{display:flex;align-items:center;gap:22px}.edition{color:var(--muted);font:12px/1.5 ui-monospace,monospace;letter-spacing:.08em}.quiet{background:transparent;font-size:14px}
+    .intro{position:absolute;top:20%;left:36px;max-width:370px;pointer-events:none}.eyebrow{color:var(--accent);font:12px/1.4 ui-monospace,monospace;letter-spacing:.18em;text-transform:uppercase;margin:0 0 22px}.intro h1{font-size:clamp(42px,4.35vw,72px);font-weight:400;letter-spacing:-.055em;line-height:1.06;margin:0 0 20px}.intro h1 small{display:block;font-size:18px;letter-spacing:.02em;margin-bottom:10px;color:var(--muted)}.intro p{font-size:16px;line-height:1.75;color:#b7c5c9;max-width:325px;margin:0}.intro .disciplines{margin-top:26px;display:flex;flex-wrap:wrap;gap:8px;max-width:310px}.pill{padding:7px 10px;border:1px solid var(--line);border-radius:30px;font-size:12px;color:#c4d4d8}
+    .scene-caption{position:absolute;top:126px;left:51%;border-left:2px solid var(--accent);padding-left:12px;pointer-events:none}.scene-caption small{font:12px ui-monospace,monospace;letter-spacing:.1em;color:var(--accent)}.scene-caption p{font-size:14px;margin:7px 0 0;color:var(--muted)}
+    .tools{position:absolute;right:36px;bottom:174px;width:240px;background:var(--panel);border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(16px);box-shadow:0 14px 60px #0003}.tools summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:15px 17px;font-size:14px}.tools summary::-webkit-details-marker{display:none}.tools summary::after{content:'+';color:var(--accent)}.tools[open] summary::after{content:'−'}.tool-body{padding:2px 17px 17px}.row-label{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:#c4d2d7;margin:13px 0 6px}.row-label output{font:12px ui-monospace,monospace;color:var(--accent)}input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:20px;margin:0}select{width:100%;background:#14242d;color:var(--ink);border:1px solid var(--line);padding:8px;border-radius:6px;font-size:13px}.tool-actions{display:flex;gap:8px;margin-top:14px}.tool-actions button{flex:1;font-size:12px;padding:9px 6px}.tools .micro{color:var(--muted);font-size:12px;line-height:1.6;margin:10px 0 0}
+    .water-note{position:absolute;left:36px;bottom:200px;color:#c2d7dc;font-size:13px;line-height:1.8;max-width:315px}.water-note strong{font-weight:400;color:var(--accent)}
+    .bottom{position:absolute;bottom:0;left:0;right:0;padding:0 36px 22px}.gallery-nav{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:12px;background:#0a141bdc;backdrop-filter:blur(14px);overflow:hidden}.exhibit{border:0;border-radius:0;background:transparent;text-align:left;display:flex;align-items:center;gap:18px;padding:20px 22px;position:relative}.exhibit+.exhibit{border-left:1px solid var(--line)}.exhibit[aria-selected=true]{background:#d9f2860c}.exhibit[aria-selected=true]::before{content:'';position:absolute;top:0;left:22px;right:22px;height:2px;background:var(--accent)}.exhibit .num{font:14px ui-monospace,monospace;color:#647d84}.exhibit[aria-selected=true] .num{color:var(--accent)}.exhibit strong{display:block;font-weight:500;font-size:16px}.exhibit small{display:block;color:var(--muted);font-size:12px;margin-top:6px}.exhibit .arrow{margin-left:auto;color:var(--accent);font-size:22px}.footer{display:flex;justify-content:space-between;gap:18px;margin-top:17px;font:12px/1.5 ui-monospace,monospace;color:#9eb0b7}.footer button{background:none;border:0;padding:0;font:inherit;color:#9eb0b7;text-decoration:underline;text-underline-offset:4px}
+    #asset-state{position:absolute;top:185px;left:51%;font-size:13px;color:var(--accent);max-width:270px;line-height:1.6;background:#081218b8;padding:8px 12px;border-radius:6px}#asset-state:empty{display:none}#retry-model{margin-top:8px;font-size:12px}
+    #notice{position:absolute;top:106px;left:50%;transform:translateX(-50%);max-width:520px;width:calc(100% - 40px);border:1px solid #e9b77d80;border-radius:8px;padding:14px;background:#20190ff2;color:#ffe0b1;font-size:14px;z-index:8}#notice:empty{display:none}
+    dialog{background:#0c171f;color:var(--ink);border:1px solid #ffffff35;border-radius:16px;width:min(780px,calc(100% - 32px));max-height:85svh;padding:26px;box-shadow:0 30px 120px #000a}dialog::backdrop{background:#02090dc9;backdrop-filter:blur(6px)}.dialog-top{display:flex;align-items:center;justify-content:space-between;gap:15px}dialog h2{font-size:24px;font-weight:500;letter-spacing:-.03em;margin:0}dialog h3{font-size:16px;color:var(--accent);margin:24px 0 8px}dialog p,dialog li{font-size:14px;line-height:1.8;color:#bdccd1}dialog ul{padding-left:20px}dialog pre{background:#050b10;padding:16px;border:1px solid var(--line);border-radius:8px;overflow:auto;font:12px/1.8 ui-monospace,monospace;color:#cbe6b8;white-space:pre}dialog .credit{font-size:12px;color:#9cabb1}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}[hidden]{display:none!important}
+    @media(min-width:1600px){.intro{left:5%;max-width:430px}.water-note{left:5%}}
+    @media(max-width:1050px){.intro{max-width:300px}.intro h1{font-size:46px}.intro p{max-width:260px}.tools{right:24px;width:218px}.intro,.water-note{left:24px}header{padding:22px 24px}.bottom{padding:0 24px 20px}.scene-caption{left:49%}.exhibit{padding:19px 16px;gap:10px}.exhibit .arrow{display:none}.water-note{max-width:260px}.edition{display:none}}
+    @media(max-width:720px){#app{min-height:1040px;height:auto}header{padding:18px 20px}.brand-name{font-size:12px}.header-right{gap:8px}.intro{position:relative;top:auto;left:auto;max-width:none;margin:28px 22px 0}.intro h1{font-size:41px;line-height:1.1;letter-spacing:-.05em}.intro h1 small{font-size:14px}.intro h1 br{display:none}.intro p{font-size:14px;max-width:410px}.eyebrow{margin-bottom:14px;font-size:11px}.intro .disciplines{margin-top:16px;max-width:none}.scene-caption{top:350px;left:22px}.vignette{background:linear-gradient(180deg,#080e12 0%,#080e12dc 20%,transparent 42%,transparent 67%,#080e12 87%)}.tools{right:20px;bottom:188px;width:210px}.tools summary{padding:12px 15px}.water-note{left:22px;bottom:205px;font-size:12px;max-width:140px}.bottom{padding:0 20px 20px}.exhibit{padding:15px 10px;gap:5px;display:block}.exhibit .num{font-size:11px}.exhibit strong{font-size:13px;margin-top:7px}.exhibit small{font-size:11px;line-height:1.5}.footer{font-size:11px;flex-wrap:wrap;gap:6px}.scene-caption p{font-size:12px}#asset-state{left:22px;top:406px;max-width:210px;font-size:12px}.quiet{padding:9px 10px;font-size:12px}}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+  </style>
+  <!-- Pinned matching core + addons. All application CSS, JS and GLSL live in this file. -->
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+</head>
+<body>
+<main id="app">
+  <div id="stage" aria-label="Interactive 3D gallery"></div><div class="vignette"></div>
+  <header>
+    <div class="brand"><span class="monogram" aria-hidden="true">SS</span><div><span class="brand-name">SIBSAN SUKSUCHANO</span><small>INTERACTIVE 3D PORTFOLIO</small></div></div>
+    <div class="header-right"><span class="edition">COMPUTER GRAPHICS / SIMULATION</span><button id="about-btn" class="quiet">About & credits</button></div>
+  </header>
+  <section class="intro" aria-label="Introduction">
+    <div class="eyebrow">REAL-TIME EXPLORATIONS</div>
+    <h1><small>Lect.</small>Sibsan<br> Suksuchano<span style="color:var(--accent)">.</span></h1>
+    <p>สำรวจความเป็นไปได้ของ Computer Graphics ผ่านวัสดุ แสง พฤติกรรม และปฏิสัมพันธ์ในโลกสามมิติ</p>
+    <div class="disciplines"><span class="pill">Computer Graphics</span><span class="pill">Simulation</span><span class="pill">Interaction</span></div>
+  </section>
+  <div class="scene-caption" id="exhibit-panel" role="tabpanel" aria-labelledby="tab-pbr"><small id="scene-number">EXPERIMENT 01 / MATERIAL</small><p id="scene-description">Damaged Helmet · glTF 2.0 / PBR</p></div>
+  <div id="asset-state" role="status">กำลังเตรียมฉาก 3D…</div><div id="notice" role="alert"></div>
+  <details class="tools" open>
+    <summary>Scene controls</summary>
+    <div class="tool-body">
+      <div class="row-label"><label for="exposure">Exposure / ความสว่าง</label><output for="exposure" id="exposure-out">1.25</output></div>
+      <input id="exposure" type="range" min="0.4" max="2.5" step="0.05" value="1.25">
+      <div class="row-label"><label for="wave">Water / ความแรงคลื่น</label><output for="wave" id="wave-out">0.70</output></div>
+      <input id="wave" type="range" min="0" max="1.5" step="0.05" value="0.7">
+      <div id="pbr-controls"><div class="row-label"><label for="light">Light / มุมแสง</label><output id="light-out" for="light">45°</output></div><input id="light" type="range" min="0" max="360" step="1" value="45"></div>
+      <div id="flock-controls" hidden><div class="row-label"><label for="cohesion">Cohesion / การรวมฝูง</label><output id="cohesion-out" for="cohesion">1.00</output></div><input id="cohesion" type="range" min="0" max="2" step="0.05" value="1"></div>
+      <div id="shader-controls" hidden><div class="row-label"><label for="warp">Domain warp</label><output id="warp-out" for="warp">0.65</output></div><input id="warp" type="range" min="0" max="1.5" step="0.05" value="0.65"></div>
+      <div class="tool-actions"><button id="pause" aria-pressed="false">Pause</button><button id="reset">Reset view</button></div>
+      <button id="tech-btn" class="quiet" style="width:100%;margin-top:8px;font-size:12px">เบื้องหลังการทำงาน ↗</button>
+    </div>
+  </details>
+  <div class="water-note"><strong>MOVE TO MAKE WAVES</strong><br>เลื่อนเมาส์บนผิวน้ำเพื่อสร้างคลื่น<br>ลากเพื่อหมุนกล้อง · Scroll เพื่อซูม</div>
+  <div class="bottom">
+    <nav class="gallery-nav" aria-label="Experiments" role="tablist">
+      <button class="exhibit" id="tab-pbr" role="tab" aria-selected="true" aria-controls="exhibit-panel" data-mode="pbr"><span class="num">01</span><span><strong>PBR Showcase</strong><small>Metal. Texture. Light.</small></span><span class="arrow">↗</span></button>
+      <button class="exhibit" id="tab-flock" role="tab" aria-selected="false" aria-controls="exhibit-panel" data-mode="flock" tabindex="-1"><span class="num">02</span><span><strong>Flock Simulation</strong><small>Rules become behavior.</small></span><span class="arrow">↗</span></button>
+      <button class="exhibit" id="tab-shader" role="tab" aria-selected="false" aria-controls="exhibit-panel" data-mode="shader" tabindex="-1"><span class="num">03</span><span><strong>Shader Study</strong><small>Code becomes material.</small></span><span class="arrow">↗</span></button>
+    </nav>
+    <footer class="footer"><span id="render-stats">THREE.JS / WEBGL 2</span><span>Drag to orbit · Pinch / scroll to zoom · <button id="credits-btn">Asset credits</button></span></footer>
+  </div>
+  <noscript><div style="padding:24px;color:#fff">โปรดเปิด JavaScript เพื่อดูผลงาน 3D</div></noscript>
+</main>
+<dialog id="info-dialog" aria-labelledby="dialog-title"><div class="dialog-top"><h2 id="dialog-title">About this portfolio</h2><button id="close-dialog" aria-label="Close dialog">✕</button></div><div id="dialog-content"></div></dialog>
+<script>
+  // Keep an actionable message even if a module CDN fails before initialization.
+  window.__portfolioReady=false;
+  window.__bootTimeout=setTimeout(()=>{if(!window.__portfolioReady)document.getElementById('notice').textContent='ยังโหลด 3D ไม่สำเร็จ โปรดตรวจสอบอินเทอร์เน็ต แล้วเปิดผ่าน localhost หรือ HTTPS ในเบราว์เซอร์ที่รองรับ WebGL 2';},18000);
+</script>
+<script type="module">
+/*
+ * SIBSAN — single-file interactive portfolio
+ * Run: python3 -m http.server 8000 ; visit http://localhost:8000
+ * Online dependencies: Three.js r170 + public Khronos GLB (no build step).
+ * Replace MODEL_URLS + asset credits to use your own GLB.
+ * CPU fixed-step Boids / GPU GLSL water & procedural material / planar reflection.
+ */
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+
+const $=id=>document.getElementById(id);
+const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let mode='pbr', paused=reducedMotion, running=true, elapsed=0, accumulator=0;
+let modelLoaded=false, modelError=false, loadingModel=false;
+const state={cohesion:1,warp:.65};
+const MODEL_URLS=[
+  'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/DamagedHelmet/glTF-Binary/DamagedHelmet.glb',
+  'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Assets@main/Models/DamagedHelmet/glTF-Binary/DamagedHelmet.glb'
+];
+
+// Plain-language descriptions plus inspectable excerpts of the actual algorithms.
+const descriptions={
+ pbr:['EXPERIMENT 01 / MATERIAL','Damaged Helmet · glTF 2.0 / PBR'],
+ flock:['EXPERIMENT 02 / BEHAVIOR','180 boids · separation / alignment / cohesion'],
+ shader:['EXPERIMENT 03 / GLSL','Domain warping · iridescence · vertex displacement']
+};
+function openDialog(title,html){$('dialog-title').textContent=title;$('dialog-content').innerHTML=html;$('info-dialog').showModal();}
+function about(){openDialog('Lect. Sibsan Suksuchano',`<p>Interactive portfolio สำหรับนำเสนอ Computer Graphics, Simulation และการออกแบบปฏิสัมพันธ์ ผ่านตัวอย่างที่ทดลองได้แบบ real-time</p><h3>วิธีสำรวจ</h3><ul><li>เลือก 01–03 เพื่อเปลี่ยนผลงาน ลากบนฉากเพื่อหมุนกล้อง และ scroll หรือ pinch เพื่อซูม</li><li>เลื่อนเมาส์หรือแตะผิวน้ำเพื่อสร้างคลื่น คลื่นยังทำงานขณะเปลี่ยนผลงาน</li><li>กด Pause เพื่อหยุดเวลา หรือ Reset view เพื่อกลับมุมเริ่มต้น ใช้ปุ่มลูกศรเมื่อโฟกัส canvas เพื่อหมุนกล้อง</li></ul><h3>Asset credits</h3><p>โมเดลสาธารณะเพื่อสาธิตการเรนเดอร์ ไม่ใช่โมเดลที่อ้างว่าเจ้าของ portfolio สร้างเอง</p><p><a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/DamagedHelmet" target="_blank" rel="noopener noreferrer">Damaged Helmet · Khronos glTF Sample Assets</a><br>Original model: © 2016 theblueturtle_ · <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener noreferrer">CC BY-NC 4.0</a>.<br>Rebuild and glTF conversion: © 2018 ctxwing · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>. ใช้งานตามเงื่อนไขของแต่ละส่วนที่ระบุในต้นฉบับ</p><p class="credit"><a href="${MODEL_URLS[0]}" target="_blank" rel="noopener noreferrer">Public GLB link</a> · <a href="https://threejs.org/" target="_blank" rel="noopener noreferrer">Three.js</a> (MIT). แสง environment สร้างด้วย RoomEnvironment ใน Three.js โดยไม่โหลด HDR ภายนอก</p>`);}
+function technical(){
+ const body={pbr:`<h3>Physically Based Rendering</h3><p>GLTFLoader อ่าน base color, metallic–roughness, normal, occlusion และ emissive textures ของ GLB วัสดุโลหะสะท้อนแสงจาก environment ที่ผ่าน PMREM ส่วน ACES tone mapping แปลงช่วงความสว่างมาแสดงบนหน้าจอ ลองเปลี่ยนมุมแสงแล้วสังเกตรอยขีดข่วนและบริเวณที่หยาบต่างกัน</p><pre>const env = pmrem.fromScene(new RoomEnvironment());\nscene.environment = env.texture;\nrenderer.toneMapping = THREE.ACESFilmicToneMapping;\nconst gltf = await loader.loadAsync(publicGLB);\nscene.add(gltf.scene);</pre>`,
+ flock:`<h3>Local rules → collective motion</h3><p>Boids 180 ตัวคำนวณ separation (ไม่ชนเพื่อน), alignment (ปรับทิศตามเพื่อน), cohesion (เข้าหาศูนย์กลางเพื่อน) ร่วมกับแรงกลับเข้าสู่ขอบเขต ใช้ CPU จำลองทีละ 1/60 วินาที และ InstancedMesh ส่งรูปทรงทั้งหมดเป็นกลุ่มให้ GPU วาด ปีกขยับใน vertex shader เลื่อนเมาส์บนฉากเพื่อให้ฝูงหลบ</p><pre>acceleration = separation * 1.6\n             + alignment * 0.9\n             + cohesion * cohesionControl\n             + boundaryForce + pointerAvoidance;\nvelocity += acceleration * fixedDt;\nposition += velocity * fixedDt;</pre>`,
+ shader:`<h3>Procedural material in GLSL</h3><p>FBM รวม value noise หลายความถี่ แล้วใช้ noise บิดพิกัด (domain warping) เพื่อสร้างลายโดยไม่ใช้ภาพ texture มี vertex displacement, surface normal จาก screen-space derivatives, Fresnel rim, iridescent color และเส้น contour แบบ anti-alias ด้วย fwidth ปรับ Domain warp เพื่อดูรูปแบบลายเปลี่ยนไป</p><pre>vec3 q = vec3(fbm(p), fbm(p + 4.7), fbm(p + 9.2));\nfloat field = fbm(p + warp * 2.8 * q);\nvec3 N = normalize(cross(dFdx(world), dFdy(world)));\nfloat rim = pow(1.0 - max(dot(N,V),0.0), 3.0);\nvec3 color = palette(field + rim * 0.36);</pre>`};
+ openDialog(descriptions[mode][1],body[mode]+`<h3>Interactive water · vertex + fragment shader</h3><p>Raycaster หาจุดที่เมาส์ตัดกับระนาบน้ำ แล้วส่งตำแหน่งและเวลาเริ่มต้นของคลื่นให้ GLSL คลื่นวงแหวนแผ่ออกและค่อย ๆ จาง ใช้ finite differences หา normal ของผิวคลื่น แล้วใช้ Fresnel ผสมสีน้ำกับภาพสะท้อนจากกล้องที่สะท้อนตำแหน่งข้ามระนาบน้ำ ภาพสะท้อนอัปเดตทุกสองเฟรมเพื่อลดภาระ GPU</p><pre>float ring = distance - age * waveSpeed;\nheight += sin(ring * frequency)\n        * exp(-ring * ring * 1.5) * exp(-age * 0.8);\nfloat fresnel = 0.02 + 0.98 * pow(1.0 - NdotV, 5.0);\ncolor = mix(waterColor, reflectedColor, fresnel);</pre><p class="credit">นี่เป็น procedural wave visualization ไม่ใช่ fluid solver เชิงฟิสิกส์เต็มรูปแบบ · ดูโค้ดจริงทั้งหมดได้ใน index.html</p>`);
+}
+$('about-btn').onclick=about;$('credits-btn').onclick=about;$('tech-btn').onclick=technical;
+$('close-dialog').onclick=()=>$('info-dialog').close();
+$('info-dialog').addEventListener('click',e=>{if(e.target===$('info-dialog')){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close();}});
+
+try { init(); } catch(error) { console.error(error); $('asset-state').textContent='';$('notice').textContent='เริ่ม WebGL ไม่สำเร็จ: '+error.message+' — ลองเปิด hardware acceleration หรือใช้เบราว์เซอร์รุ่นใหม่';clearTimeout(window.__bootTimeout); }
+
+function init(){
+ const stage=$('stage');
+ const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});
+ renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));
+ renderer.setClearColor(0x080e12);renderer.outputColorSpace=THREE.SRGBColorSpace;
+ renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;
+ stage.appendChild(renderer.domElement);
+ const canvas=renderer.domElement;canvas.tabIndex=0;canvas.setAttribute('aria-label','3D scene: drag to orbit, scroll to zoom, arrow keys to rotate, move pointer over water for ripples');
+ canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();running=false;$('notice').textContent='การเชื่อมต่อ GPU หยุดทำงาน โปรดรีเฟรชหน้าเพื่อเริ่มฉากใหม่';});
+ const scene=new THREE.Scene();scene.background=new THREE.Color(0x080e12);scene.fog=new THREE.FogExp2(0x080e12,.028);
+ const camera=new THREE.PerspectiveCamera(43,1,.1,120);
+ const controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.dampingFactor=.065;controls.enablePan=false;
+ controls.minDistance=5;controls.maxDistance=23;controls.minPolarAngle=.18;controls.maxPolarAngle=Math.PI*.475;controls.rotateSpeed=.65;
+ function resetCamera(){const mobile=stage.clientWidth<721;camera.position.set(mobile?7:6.6,mobile?6.8:4.8,mobile?13.8:9.3);controls.target.set(0,mode==='flock'?2.6:1.7,0);controls.update();}
+ function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.setViewOffset(w,h,w<721?0:-w*.12,w<721?-h*.045:0,w,h);camera.updateProjectionMatrix();}
+ new ResizeObserver(resize).observe(stage);resetCamera();resize();
+ const pmrem=new THREE.PMREMGenerator(renderer),room=new RoomEnvironment();const environment=pmrem.fromScene(room,.04);
+ scene.environment=environment.texture;scene.environmentIntensity=1.35;room.dispose();pmrem.dispose();
+ scene.add(new THREE.HemisphereLight(0xb2faff,0x172635,1.6));
+ const key=new THREE.DirectionalLight(0xffe1ad,4);key.position.set(4,6,4);scene.add(key);
+ const rimLight=new THREE.DirectionalLight(0x80e6ff,3);rimLight.position.set(-5,3,-4);scene.add(rimLight);
+ const fill=new THREE.PointLight(0xb1c8ff,35,22,2);fill.position.set(0,5,4);scene.add(fill);
+
+ // Shared gallery plinth, modeled geometry rather than a background image.
+ const plinth=new THREE.Group();scene.add(plinth);
+ const base=new THREE.Mesh(new THREE.CylinderGeometry(2.15,2.28,.4,96),new THREE.MeshStandardMaterial({color:0x18292c,roughness:.3,metalness:.65}));base.position.y=.23;plinth.add(base);
+ const top=new THREE.Mesh(new THREE.CylinderGeometry(2.13,2.13,.025,96),new THREE.MeshStandardMaterial({color:0x26383a,roughness:.28,metalness:.75}));top.position.y=.44;plinth.add(top);
+ const ring=new THREE.Mesh(new THREE.TorusGeometry(2.17,.012,8,128),new THREE.MeshBasicMaterial({color:0xd9f286}));ring.rotation.x=Math.PI/2;ring.position.y=.3;plinth.add(ring);
+ const pbrGroup=new THREE.Group();scene.add(pbrGroup);
+ // Visible material study remains available during GLB loading or failure.
+ const placeholder=new THREE.Group();pbrGroup.add(placeholder);
+ for(let i=0;i<3;i++){const s=new THREE.Mesh(new THREE.SphereGeometry(.52,40,28),new THREE.MeshStandardMaterial({color:[0xcfddcb,0xcc863e,0x7c999a][i],metalness:1,roughness:[.07,.3,.7][i]}));s.position.set((i-1)*1.2,1.1,0);placeholder.add(s);}
+ const loader=new GLTFLoader();
+ function assetLabel(){const el=$('asset-state');el.replaceChildren();if(mode!=='pbr')return;
+   if(modelLoaded)return;
+   el.append(document.createTextNode(modelError?'โหลด GLB ไม่สำเร็จ · ขณะแสดง PBR spheres สำรอง':'กำลังโหลด public GLB…'));
+   if(modelError){const b=document.createElement('button');b.id='retry-model';b.textContent='ลองโหลดโมเดลอีกครั้ง';b.onclick=loadModel;el.append(document.createElement('br'),b);}
+ }
+ async function loadModel(){
+  if(loadingModel||modelLoaded)return;loadingModel=true;modelError=false;assetLabel();
+  for(const url of MODEL_URLS){
+   try{
+    const abort=new AbortController();const timeout=setTimeout(()=>abort.abort(),25000);let bytes;
+    try{const response=await fetch(url,{signal:abort.signal,mode:'cors'});if(!response.ok)throw Error('GLB HTTP '+response.status);bytes=await response.arrayBuffer();}finally{clearTimeout(timeout);}
+    const gltf=await loader.parseAsync(bytes,url.slice(0,url.lastIndexOf('/')+1));
+    const model=gltf.scene,box=new THREE.Box3().setFromObject(model),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3());
+    const scale=3.2/Math.max(size.x,size.y,size.z);model.scale.setScalar(scale);model.position.copy(center).multiplyScalar(-scale);model.position.y+=.6+size.y*scale/2;
+    model.traverse(o=>{if(o.isMesh){const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{m.envMapIntensity=1.25;});}});
+    pbrGroup.add(model);pbrGroup.remove(placeholder);placeholder.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});
+    modelLoaded=true;loadingModel=false;assetLabel();return;
+   }catch(e){console.warn('GLB load failed:',url,e.message);}
+  }
+  loadingModel=false;modelError=true;assetLabel();
+ }
+ loadModel();
+
+ // GLSL helpers shared by the procedural material.
+ const noiseGLSL=`
+ float hash3(vec3 p){p=fract(p*.3183099+vec3(.1,.2,.3));p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
+ float noise3(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+  return mix(mix(mix(hash3(i),hash3(i+vec3(1,0,0)),f.x),mix(hash3(i+vec3(0,1,0)),hash3(i+vec3(1,1,0)),f.x),f.y),
+  mix(mix(hash3(i+vec3(0,0,1)),hash3(i+vec3(1,0,1)),f.x),mix(hash3(i+vec3(0,1,1)),hash3(i+vec3(1,1,1)),f.x),f.y),f.z);}
+ float fbm(vec3 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*noise3(p);p=p*2.03+vec3(7.1,3.4,5.2);a*=.5;}return v;}
+ `;
+ const artUniforms={uTime:{value:0},uWarp:{value:.65}};
+ const artMaterial=new THREE.ShaderMaterial({uniforms:artUniforms,
+  vertexShader:`uniform float uTime;uniform float uWarp;varying vec3 vWorld;varying vec3 vLocal;${noiseGLSL}
+  void main(){float displacement=(fbm(position*2.+vec3(0,uTime*.25,0))-.5)*(.12+uWarp*.18);vec3 p=position+normal*displacement;vLocal=p;vec4 world=modelMatrix*vec4(p,1.);vWorld=world.xyz;gl_Position=projectionMatrix*viewMatrix*world;}`,
+  fragmentShader:`uniform float uTime;uniform float uWarp;varying vec3 vWorld;varying vec3 vLocal;${noiseGLSL}
+  vec3 palette(float x){return .52+.48*cos(6.28318*(vec3(1.)*x+vec3(.08,.34,.48)));}
+  void main(){vec3 p=vLocal*2.5+vec3(0,uTime*.12,0);vec3 q=vec3(fbm(p),fbm(p+4.7),fbm(p+9.2));float field=fbm(p+uWarp*2.8*q);
+   vec3 N=normalize(cross(dFdx(vWorld),dFdy(vWorld)));if(!gl_FrontFacing)N=-N;vec3 V=normalize(cameraPosition-vWorld);float rim=pow(1.-max(dot(N,V),0.),3.);
+   vec3 L=normalize(vec3(3,5,4));float diffuse=max(dot(N,L),0.);float spec=pow(max(dot(N,normalize(L+V)),0.),80.);
+   float bands=field*15.;float lineDist=abs(fract(bands)-.5);float aa=max(fwidth(bands)*.7,.015);float contour=1.-smoothstep(.025,.025+aa,lineDist);
+   vec3 color=palette(field*.9+rim*.36+uTime*.015);color*=.25+diffuse*.85;color+=contour*vec3(.4,.9,.75)*.65+rim*vec3(.18,.55,.7)+spec*.9;
+   gl_FragColor=vec4(color,1.);
+   #include <tonemapping_fragment>
+   #include <colorspace_fragment>
+  }`
+ });
+ const art=new THREE.Mesh(new THREE.TorusKnotGeometry(1.1,.37,192,32,2,3),artMaterial);art.position.y=2.3;art.visible=false;scene.add(art);
+
+ // Instanced birds: one local geometry (forward +Z), per-instance transform and phase.
+ const COUNT=180,flockGroup=new THREE.Group();flockGroup.visible=false;scene.add(flockGroup);
+ const birdGeometry=new THREE.BufferGeometry();
+ birdGeometry.setAttribute('position',new THREE.Float32BufferAttribute([
+  0,0,.2,-.085,0,-.16,.085,0,-.16,
+  -.03,0,.06,-.48,.025,-.09,-.09,0,-.16,
+  .03,0,.06,.09,0,-.16,.48,.025,-.09],3));birdGeometry.computeVertexNormals();
+ const phases=new Float32Array(COUNT);for(let i=0;i<COUNT;i++)phases[i]=Math.random()*Math.PI*2;
+ birdGeometry.setAttribute('aPhase',new THREE.InstancedBufferAttribute(phases,1));
+ const birdUniforms={uTime:{value:0}};
+ const birdMaterial=new THREE.ShaderMaterial({side:THREE.DoubleSide,uniforms:birdUniforms,
+ vertexShader:`attribute float aPhase;uniform float uTime;varying vec3 vColor;varying float vDepth;
+ void main(){vec3 p=position;p.y+=sin(uTime*10.+aPhase)*abs(p.x)*.65;vec4 world=modelMatrix*instanceMatrix*vec4(p,1.);vec4 view=viewMatrix*world;vDepth=-view.z;vColor=mix(vec3(.2,.68,.76),vec3(.85,.95,.42),aPhase/6.28318);gl_Position=projectionMatrix*view;}`,
+ fragmentShader:`varying vec3 vColor;varying float vDepth;void main(){vec3 c=mix(vColor,vec3(.015,.03,.04),1.-exp(-.018*vDepth));gl_FragColor=vec4(c,1.);
+ #include <tonemapping_fragment>
+ #include <colorspace_fragment>
+ }`});
+ const birds=new THREE.InstancedMesh(birdGeometry,birdMaterial,COUNT);birds.instanceMatrix.setUsage(THREE.DynamicDrawUsage);birds.frustumCulled=false;flockGroup.add(birds);
+ const positions=[],velocities=[],forces=[];
+ for(let i=0;i<COUNT;i++){positions.push(new THREE.Vector3((Math.random()-.5)*6,1+Math.random()*4,(Math.random()-.5)*6));velocities.push(new THREE.Vector3(Math.random()-.5,Math.random()-.5,Math.random()-.5).normalize().multiplyScalar(1.8));forces.push(new THREE.Vector3());}
+ const delta=new THREE.Vector3(),separation=new THREE.Vector3(),alignment=new THREE.Vector3(),cohesion=new THREE.Vector3();
+ const pointer3D=new THREE.Vector3(),pointerActive={value:false};
+ function steer(v,current,maxForce){if(v.lengthSq()>0)v.setLength(2.4).sub(current).clampLength(0,maxForce);return v;}
+ function simulate(dt){
+  // Read a complete position/velocity snapshot before integrating any agent.
+  for(let i=0;i<COUNT;i++){
+   const p=positions[i],v=velocities[i];separation.set(0,0,0);alignment.set(0,0,0);cohesion.set(0,0,0);let neighbors=0,close=0;
+   for(let j=0;j<COUNT;j++){if(i===j)continue;delta.subVectors(p,positions[j]);const d2=delta.lengthSq();if(d2<3.24){alignment.add(velocities[j]);cohesion.add(positions[j]);neighbors++;if(d2<.52&&d2>.00001){separation.addScaledVector(delta,1/d2);close++;}}}
+   const f=forces[i].set(0,0,0);
+   if(neighbors){cohesion.multiplyScalar(1/neighbors).sub(p);alignment.multiplyScalar(1/neighbors);f.addScaledVector(steer(cohesion,v,2.8),state.cohesion);f.addScaledVector(steer(alignment,v,2.4),.9);}
+   if(close)f.addScaledVector(steer(separation,v,3.6),1.6);
+   const radius=Math.hypot(p.x,p.z);if(radius>3.5){f.x-=p.x*(radius-3.5)*.7;f.z-=p.z*(radius-3.5)*.7;}
+   if(p.y<1.2)f.y+=(1.2-p.y)*6;if(p.y>5.2)f.y-=(p.y-5.2)*5;
+   f.x+=Math.sin(elapsed*.45)*.22;f.z+=Math.cos(elapsed*.4)*.22;
+   if(pointerActive.value){delta.subVectors(p,pointer3D);const d=delta.length();if(d<2.4&&d>.01)f.addScaledVector(delta,(2.4-d)*5/d);}
+   f.clampLength(0,10);
+  }
+  for(let i=0;i<COUNT;i++){velocities[i].addScaledVector(forces[i],dt).clampLength(.8,3.1);positions[i].addScaledVector(velocities[i],dt);}
+ }
+ const dummy=new THREE.Object3D(),forward=new THREE.Vector3(0,0,1),direction=new THREE.Vector3();
+ function drawFlock(){for(let i=0;i<COUNT;i++){dummy.position.copy(positions[i]);direction.copy(velocities[i]).normalize();dummy.quaternion.setFromUnitVectors(forward,direction);dummy.scale.setScalar(.65);dummy.updateMatrix();birds.setMatrixAt(i,dummy.matrix);}birds.instanceMatrix.needsUpdate=true;}
+ drawFlock();
+
+ // Water. Rings are stored in world-space XZ: (x,z,startTime,amplitude).
+ const RIPPLE_COUNT=16,ripples=Array.from({length:RIPPLE_COUNT},()=>new THREE.Vector4(0,0,-100,0));let rippleIndex=0;
+ const reflection=new THREE.WebGLRenderTarget(768,768,{type:THREE.HalfFloatType,depthBuffer:true});
+ const mirrorCamera=new THREE.PerspectiveCamera(),textureMatrix=new THREE.Matrix4();
+ const waterUniforms={uTime:{value:0},uStrength:{value:.7},uRipples:{value:ripples},uReflection:{value:reflection.texture},uTextureMatrix:{value:textureMatrix}};
+ const waves=`uniform float uTime;uniform float uStrength;uniform vec4 uRipples[16];
+ float waterHeight(vec2 p){float h=.035*sin(p.x*1.4+uTime*.7)+.028*sin(p.y*1.8-uTime*.9)+.018*sin(dot(p,vec2(2.2,1.7))+uTime*.6);
+  for(int i=0;i<16;i++){float age=uTime-uRipples[i].z;if(age>=0.&&age<7.){float r=length(p-uRipples[i].xy);float ring=r-age*2.6;h+=uRipples[i].w*sin(ring*8.)*exp(-ring*ring*1.5)*exp(-age*.8);}}
+  return h*uStrength;}
+ `;
+ const waterMaterial=new THREE.ShaderMaterial({uniforms:waterUniforms,
+ vertexShader:`${waves}uniform mat4 uTextureMatrix;varying vec3 vWorld;varying vec4 vMirror;
+ void main(){vec4 world=modelMatrix*vec4(position,1.);world.y+=waterHeight(world.xz);vWorld=world.xyz;vMirror=uTextureMatrix*world;gl_Position=projectionMatrix*viewMatrix*world;}`,
+ fragmentShader:`${waves}uniform sampler2D uReflection;varying vec3 vWorld;varying vec4 vMirror;
+ void main(){vec2 p=vWorld.xz;float e=.04;float dx=(waterHeight(p+vec2(e,0))-waterHeight(p-vec2(e,0)))/(2.*e);float dz=(waterHeight(p+vec2(0,e))-waterHeight(p-vec2(0,e)))/(2.*e);
+  vec3 N=normalize(vec3(-dx,1.,-dz));vec3 V=normalize(cameraPosition-vWorld);float ndv=max(dot(N,V),0.);float fresnel=.02+.98*pow(1.-ndv,5.);
+  vec2 uv=vMirror.xy/vMirror.w+N.xz*.022;float edge=smoothstep(0.,.055,uv.x)*smoothstep(0.,.055,uv.y)*(1.-smoothstep(.945,1.,uv.x))*(1.-smoothstep(.945,1.,uv.y));
+  vec3 sky=mix(vec3(.025,.065,.075),vec3(.15,.24,.27),pow(1.-ndv,2.));vec3 reflected=mix(sky,texture2D(uReflection,clamp(uv,.001,.999)).rgb,edge);
+  float caustic=pow(max(0.,sin(p.x*2.7+uTime*.6+sin(p.y*2.))+sin(p.y*3.1-uTime*.4)),4.)*.0015;
+  vec3 waterColor=vec3(.013,.085,.095)+caustic*vec3(.15,.65,.5);vec3 color=mix(waterColor,reflected,.22+.78*fresnel);
+  vec3 L=normalize(vec3(3.,6.,-4.));float specular=pow(max(dot(N,normalize(L+V)),0.),180.);color+=vec3(.8,1.,.82)*specular*.7;
+  float distanceToCamera=length(cameraPosition-vWorld);color=mix(color,vec3(.0024,.0044,.006),1.-exp(-.018*distanceToCamera));
+  gl_FragColor=vec4(color,1.);
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+ }`
+ });
+ const waterGeometry=new THREE.PlaneGeometry(90,90,200,200);waterGeometry.rotateX(-Math.PI/2);
+ const water=new THREE.Mesh(waterGeometry,waterMaterial);scene.add(water);
+ const mirrorTarget=new THREE.Vector3(),viewDirection=new THREE.Vector3();
+ const biasMatrix=new THREE.Matrix4().set(.5,0,0,.5,0,.5,0,.5,0,0,.5,.5,0,0,0,1);
+ function renderReflection(){
+  camera.updateMatrixWorld();mirrorCamera.copy(camera,false);mirrorCamera.position.copy(camera.position);mirrorCamera.position.y*=-1;
+  camera.getWorldDirection(viewDirection);mirrorTarget.copy(camera.position).add(viewDirection);mirrorTarget.y*=-1;
+  mirrorCamera.up.copy(camera.up);mirrorCamera.up.y*=-1;mirrorCamera.lookAt(mirrorTarget);mirrorCamera.updateMatrixWorld();
+  textureMatrix.copy(biasMatrix).multiply(mirrorCamera.projectionMatrix).multiply(mirrorCamera.matrixWorldInverse);
+  water.visible=false;const oldTarget=renderer.getRenderTarget();renderer.setRenderTarget(reflection);renderer.clear();renderer.render(scene,mirrorCamera);renderer.setRenderTarget(oldTarget);water.visible=true;
+ }
+
+ // Ray-plane intersection honors the orbiting, zooming and shifted camera.
+ const raycaster=new THREE.Raycaster(),ndc=new THREE.Vector2(),hit=new THREE.Vector3();
+ const waterPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0),flockPlane=new THREE.Plane();let lastRipple=-1,lastPointerAt=-100;const lastWater=new THREE.Vector3(1e4,0,1e4);
+ function pointer(event,force=false){
+  const rect=canvas.getBoundingClientRect();ndc.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);camera.updateMatrixWorld();raycaster.setFromCamera(ndc,camera);
+  camera.getWorldDirection(viewDirection);flockPlane.setFromNormalAndCoplanarPoint(viewDirection,controls.target);if(raycaster.ray.intersectPlane(flockPlane,pointer3D)){pointerActive.value=true;lastPointerAt=performance.now();}
+  if(paused||(!force&&event.buttons!==0))return;
+  if(raycaster.ray.intersectPlane(waterPlane,hit)&&hit.length()<40&&(force||(elapsed-lastRipple>.07&&hit.distanceToSquared(lastWater)>.07))){
+   ripples[rippleIndex].set(hit.x,hit.z,elapsed,force?.24:.14);rippleIndex=(rippleIndex+1)%RIPPLE_COUNT;lastRipple=elapsed;lastWater.copy(hit);
+  }
+ }
+ canvas.addEventListener('pointermove',e=>pointer(e));canvas.addEventListener('pointerdown',e=>{if(e.button===0){canvas.focus({preventScroll:true});pointer(e,true);}});
+ canvas.addEventListener('pointerleave',()=>{pointerActive.value=false;});
+ canvas.addEventListener('keydown',e=>{
+  if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-','='].includes(e.key))return;e.preventDefault();
+  const offset=camera.position.clone().sub(controls.target),s=new THREE.Spherical().setFromVector3(offset);
+  if(e.key==='ArrowLeft')s.theta+=.12;if(e.key==='ArrowRight')s.theta-=.12;if(e.key==='ArrowUp')s.phi-=.1;if(e.key==='ArrowDown')s.phi+=.1;
+  if(e.key==='+'||e.key==='=')s.radius*=.9;if(e.key==='-')s.radius*=1.1;
+  s.phi=THREE.MathUtils.clamp(s.phi,controls.minPolarAngle,controls.maxPolarAngle);s.radius=THREE.MathUtils.clamp(s.radius,controls.minDistance,controls.maxDistance);camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(s));controls.update();
+ });
+
+ function setMode(next){mode=next;pbrGroup.visible=mode==='pbr';plinth.visible=mode!=='flock';art.visible=mode==='shader';flockGroup.visible=mode==='flock';
+  $('scene-number').textContent=descriptions[mode][0];$('scene-description').textContent=descriptions[mode][1];$('exhibit-panel').setAttribute('aria-labelledby','tab-'+mode);
+  document.querySelectorAll('[data-mode]').forEach(b=>{const selected=b.dataset.mode===mode;b.setAttribute('aria-selected',String(selected));b.tabIndex=selected?0:-1;});
+  ['pbr','flock','shader'].forEach(m=>{$(m+'-controls').hidden=m!==mode;});assetLabel();resetCamera();
+ }
+ const tabs=[...document.querySelectorAll('[data-mode]')];tabs.forEach((b,i)=>{b.onclick=()=>setMode(b.dataset.mode);b.addEventListener('keydown',e=>{let j=i;if(e.key==='ArrowRight')j=(i+1)%3;else if(e.key==='ArrowLeft')j=(i+2)%3;else if(e.key==='Home')j=0;else if(e.key==='End')j=2;else return;e.preventDefault();tabs[j].focus();setMode(tabs[j].dataset.mode);});});
+ function bindSlider(id,apply,format=v=>v.toFixed(2)){const input=$(id);input.addEventListener('input',()=>{const value=+input.value;$(id+'-out').textContent=format(value);apply(value);});}
+ bindSlider('exposure',v=>renderer.toneMappingExposure=v);bindSlider('wave',v=>waterUniforms.uStrength.value=v);
+ bindSlider('light',v=>{const a=v*Math.PI/180;key.position.set(Math.sin(a)*7,6,Math.cos(a)*7);},v=>v+'°');
+ bindSlider('cohesion',v=>state.cohesion=v);bindSlider('warp',v=>{state.warp=v;artUniforms.uWarp.value=v;});
+ function pauseUI(){$('pause').textContent=paused?'Resume':'Pause';$('pause').setAttribute('aria-pressed',String(paused));}
+ $('pause').onclick=()=>{paused=!paused;accumulator=0;pauseUI();};pauseUI();$('reset').onclick=resetCamera;
+ if(innerWidth<721)document.querySelector('.tools').open=false;
+
+ let lastTime=performance.now(),frames=0,fpsStart=lastTime,frameNumber=0;
+ document.addEventListener('visibilitychange',()=>{lastTime=performance.now();accumulator=0;});
+ function animate(now){requestAnimationFrame(animate);if(!running||document.hidden)return;
+  const dt=Math.min((now-lastTime)/1000,.05);lastTime=now;
+  if(!paused){elapsed+=dt;waterUniforms.uTime.value=elapsed;artUniforms.uTime.value=elapsed;birdUniforms.uTime.value=elapsed;
+   art.rotation.y+=dt*.16;art.rotation.z=Math.sin(elapsed*.2)*.12;
+   if(mode==='flock'){accumulator=Math.min(accumulator+dt,.1);while(accumulator>=1/60){simulate(1/60);accumulator-=1/60;}drawFlock();}
+  }
+  if(now-lastPointerAt>800)pointerActive.value=false;
+  controls.update();if(frameNumber++%2===0)renderReflection();renderer.render(scene,camera);
+  frames++;if(now-fpsStart>=1000){const fps=Math.round(frames*1000/(now-fpsStart));$('render-stats').textContent=`THREE.JS / WEBGL 2 · ${fps} FPS${mode==='flock'?' · 180 BOIDS':''}${paused?' · PAUSED':''}`;frames=0;fpsStart=now;}
+ }
+ renderReflection();renderer.render(scene,camera);window.__portfolioReady=true;clearTimeout(window.__bootTimeout);$('notice').textContent='';requestAnimationFrame(animate);
+}
+</script>
+</body>
+</html>
